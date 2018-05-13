@@ -9,7 +9,7 @@ PSU CS557 final project.
 3. Go to the repository folder in your terminal
 4. `stack init`
 5. `stack build`
-6. `stack exec` (to run the program)
+6. `stack exec todo-hs-exe` (run the program, make sure to build after you've made changes)
 
 ## Code Layout/Architecture
 
