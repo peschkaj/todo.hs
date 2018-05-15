@@ -25,6 +25,13 @@ e = Data.Aeson.encode d
 (Just d') = (Data.Aeson.decode e :: Maybe Deadline)
 d == d'
 
+-- Now we test writing to a file
+writeToFile "Deadline" l
+(Just l') = readFromFile "Deadline"
+
+-- I should be true!
+l' == l
+
 -}
 
 {-
@@ -49,9 +56,11 @@ instance ToJSON Deadline where
 instance Ord Deadline where
   compare (Deadline _ _ aDate) (Deadline _ _ bDate) = compare aDate bDate
 
-readFromFile :: B.ByteString -> IO [Deadline]
-readFromFile filename = error "not implemented" --Data.Aeson.decode contents
-  --where contents = readFile filename
+readFromFile :: FilePath -> IO (Maybe [Deadline])
+readFromFile fp = do
+    f <- L.readFile fp
+    return (decode f)
+
 
 writeToFile :: FilePath -> [Deadline] -> IO ()
 writeToFile fp = L.writeFile fp . encode
