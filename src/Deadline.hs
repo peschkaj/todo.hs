@@ -1,16 +1,49 @@
-module Deadline
-  ( Deadline
-  ) where
+{-# LANGUAGE OverloadedStrings, DeriveGeneric, DeriveAnyClass #-}
 
-import Data.ByteString
-import Data.Thyme.LocalTime
-import Data.Thyme.Clock
+module Deadline (Deadline (..),) where
 
-data Deadline = Deadline { title :: ByteString
-                         , description :: ByteString
-                         , dueDate :: LocalTime
+import Data.ByteString (ByteString)
+import Data.Text
+import Data.Time.LocalTime
+import Data.Time.Clock
+import Data.Aeson
+import GHC.Generics
+
+data Deadline = Deadline { title :: Text
+                         , description :: Text
+                         , dueDate :: UTCTime
                          , duration :: DiffTime
-                         } deriving (Show, Eq)
+                         } deriving (Show, Eq, Generic, ToJSON, FromJSON)
+
+{- How to use a Deadline
+
+t <- getCurrentTime
+d = Deadline ("First deadline"::Text) ("It's the first deadline ever"::Text) t (secondsToDiffTime 60 * 60)
+
+e = Data.Aeson.encode d
+(Just d') = (Data.Aeson.decode e :: Maybe Deadline)
+d == d'
+
+-}
+
+{-
+instance FromJSON Deadline where
+  parseJSON (Object v) =
+    Deadline <$> v .: "title"
+             <*> v .: "description"
+             <*> v .: "dueDate"
+             <*> v .: "duration"
+
+
+instance ToJSON Deadline where
+  toJSON (Deadline title description dueDate duration) =
+    object [ "title"       .= title
+           , "description" .= description
+           , "dueDate"     .= dueDate
+           , "duration"    .= duration
+           ]
+-}
+
 
 instance Ord Deadline where
   compare (Deadline _ _ aDate aDuration) (Deadline _ _ bDate bDuration) =
@@ -20,7 +53,6 @@ instance Ord Deadline where
     where
       dateComp = compare aDate bDate
       durComp = compare aDuration bDuration
-
 
 readFromFile :: ByteString -> IO [Deadline]
 readFromFile filename = error "not implemented"
