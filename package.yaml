@@ -2,7 +2,7 @@ name:                todo-hs
 version:             0.1.0.0
 github:              "peschkaj/todo-hs"
 license:             BSD3
-author:              "Jeremiah Peschka"
+author:              "Jeremiah Peschka, Halala Khoshnaw"
 maintainer:          "jeremiah.peschka@gmail.com"
 copyright:           "2018 Jeremiah Peschka"
 

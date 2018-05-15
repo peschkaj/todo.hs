@@ -1,8 +1,9 @@
 {-# LANGUAGE OverloadedStrings, DeriveGeneric, DeriveAnyClass #-}
 
-module Deadline (Deadline (..),) where
+module Deadline where
 
-import Data.ByteString (ByteString)
+import Data.ByteString as B
+import Data.ByteString.Lazy as L
 import Data.Text
 import Data.Time.LocalTime
 import Data.Time.Clock
@@ -12,13 +13,13 @@ import GHC.Generics
 data Deadline = Deadline { title :: Text
                          , description :: Text
                          , dueDate :: UTCTime
-                         , duration :: DiffTime
                          } deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 {- How to use a Deadline
 
 t <- getCurrentTime
-d = Deadline ("First deadline"::Text) ("It's the first deadline ever"::Text) t (secondsToDiffTime 60 * 60)
+d = Deadline ("First deadline"::Text) ("It's the first deadline ever"::Text) t
+l = [d,d,d]
 
 e = Data.Aeson.encode d
 (Just d') = (Data.Aeson.decode e :: Maybe Deadline)
@@ -46,21 +47,19 @@ instance ToJSON Deadline where
 
 
 instance Ord Deadline where
-  compare (Deadline _ _ aDate aDuration) (Deadline _ _ bDate bDuration) =
-    if dateComp == EQ
-      then durComp
-      else dateComp
-    where
-      dateComp = compare aDate bDate
-      durComp = compare aDuration bDuration
+  compare (Deadline _ _ aDate) (Deadline _ _ bDate) = compare aDate bDate
 
-readFromFile :: ByteString -> IO [Deadline]
-readFromFile filename = error "not implemented"
+readFromFile :: B.ByteString -> IO [Deadline]
+readFromFile filename = error "not implemented" --Data.Aeson.decode contents
+  --where contents = readFile filename
 
-writeToFile :: ByteString -> [Deadline] -> IO ()
-writeToFile filename deadlines = error "not implemented"
+writeToFile :: FilePath -> [Deadline] -> IO ()
+writeToFile fp = L.writeFile fp . encode
 
-upcomingDeadlines :: [Deadline] -- ^ A list of deadlines
+
+
+upcomingDeadlines :: DiffTime   -- ^ Duration for alert
+                  -> [Deadline] -- ^ A list of deadlines
                   -> [Deadline] -- ^ All deadlines occurring in the next 5 hours
 upcomingDeadlines = error "not implemented"
 
