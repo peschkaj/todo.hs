@@ -2,7 +2,7 @@
 
 module Deadline where
 
-import Data.ByteString.Lazy as L
+import Data.ByteString.Lazy as L hiding (map, concatMap)
 import Data.Time.Format (formatTime, defaultTimeLocale)
 import Data.Time.LocalTime
 import Data.Time.Clock (UTCTime, NominalDiffTime, addUTCTime, getCurrentTime)
@@ -18,12 +18,23 @@ data Deadline = Deadline { title :: String
 
 :set -XOverloadedStrings
 t <- getCurrentTime
-d = Deadline ("First deadline"::Text) ("It's the first deadline ever"::Text) t
-l = [d,d,d]
+tz <- getCurrentTimeZone
+d1 = Deadline "First deadline" "It's the first deadline ever" (addMinutes 60 t)
+d2 = Deadline "Second deadline" "It's the second deadline ever" (addMinutes 180 t)
+d3 = Deadline "Third deadline" "Why so many deadlines?" (addMinutes 600 t)
+l = [d1,d2,d3]
 
-e = Data.Aeson.encode d
-(Just d') = (Data.Aeson.decode e :: Maybe Deadline)
-d == d'
+-- What are all of my upcoming tasks?
+putStrLn (deadlinesToLines tz l)
+
+-- What do I need to do next?
+upcomingDeadlines l >>= putStrLn . deadlinesToLines tz
+
+
+-- Testing JSON encode/decode
+e1 = Data.Aeson.encode d1
+(Just d1') = (Data.Aeson.decode e1 :: Maybe Deadline)
+d1 == d1'
 
 -- Now we test writing to a file
 writeToFile "Deadline" l
@@ -31,6 +42,7 @@ writeToFile "Deadline" l
 
 -- I should be true!
 l' == l
+
 
 -}
 
@@ -80,8 +92,11 @@ addMinutes minutes = addUTCTime (minutes * 60)
 currentTimePlusMinutes :: NominalDiffTime -> IO UTCTime
 currentTimePlusMinutes minutes = addUTCTime (minutes * 60) <$> getCurrentTime
 
+deadlinesToLines :: TimeZone -> [Deadline] -> String
+deadlinesToLines tz = concatMap (\d -> deadlineToLine tz d)
+
 deadlineToLine :: TimeZone -> Deadline -> String
 deadlineToLine tz d = title d ++ "\n  "
                    ++ formatTime defaultTimeLocale "%c" time ++ "\n  "
-                   ++ description d
+                   ++ description d ++ "\n\n"
   where time = utcToLocalTime tz (dueDate d)
