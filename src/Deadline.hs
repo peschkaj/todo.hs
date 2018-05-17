@@ -7,6 +7,7 @@ module Deadline (Deadline(..)
                 , deadlinesToLines
                 , getCurrentDeadlines
                 , addMinutes
+                , addDeadline
                 ) where
 
 import Data.ByteString.Lazy as L hiding (concatMap)
@@ -75,12 +76,18 @@ instance ToJSON Deadline where
 instance Ord Deadline where
   compare (Deadline _ _ aDate) (Deadline _ _ bDate) = compare aDate bDate
 
+deadlineFile :: String
 deadlineFile = "Deadlines"
 
 getCurrentDeadlines :: IO [Deadline]
 getCurrentDeadlines = readDeadlinesFromFile deadlineFile >>= (\x -> case x of
                         (Just ds)  -> return ds
                         Nothing  -> return [])
+
+addDeadline :: Deadline -> [Deadline] -> IO [Deadline]
+addDeadline d ds = do writeDeadlinesToFile deadlineFile ds'
+                      return ds'
+  where ds' = d:ds
 
 
 readDeadlinesFromFile :: FilePath -> IO (Maybe [Deadline])
