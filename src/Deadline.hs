@@ -8,9 +8,10 @@ module Deadline (Deadline(..)
                 , getCurrentDeadlines
                 , addMinutes
                 , addDeadline
+                , displayAllDeadlines
                 ) where
 
-import Data.ByteString.Lazy as L hiding (concatMap)
+import Data.ByteString.Lazy as L hiding (concatMap, putStrLn)
 import Data.Time.Format (formatTime, defaultTimeLocale)
 import Data.Time.LocalTime
 import Data.Time.Clock (UTCTime, NominalDiffTime, addUTCTime, getCurrentTime)
@@ -113,6 +114,11 @@ addMinutes minutes = addUTCTime (minutes * 60)
 
 currentTimePlusMinutes :: NominalDiffTime -> IO UTCTime
 currentTimePlusMinutes minutes = addUTCTime (minutes * 60) <$> getCurrentTime
+
+displayAllDeadlines :: IO()
+displayAllDeadlines = do ds <- getCurrentDeadlines
+                         tz <- getCurrentTimeZone
+                         putStrLn (deadlinesToLines tz ds)
 
 deadlinesToLines :: TimeZone -> [Deadline] -> String
 deadlinesToLines tz ds = concatMap (deadlineToLine tz) (sort ds)
