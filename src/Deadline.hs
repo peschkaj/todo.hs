@@ -2,21 +2,21 @@
 
 module Deadline where
 
-import Data.ByteString as B
 import Data.ByteString.Lazy as L
-import Data.Text
+import Data.Time.Format (formatTime, defaultTimeLocale)
 import Data.Time.LocalTime
-import Data.Time.Clock
+import Data.Time.Clock (UTCTime, NominalDiffTime, addUTCTime, getCurrentTime)
 import Data.Aeson
 import GHC.Generics
 
-data Deadline = Deadline { title :: Text
-                         , description :: Text
+data Deadline = Deadline { title :: String
+                         , description :: String
                          , dueDate :: UTCTime
                          } deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 {- How to use a Deadline
 
+:set -XOverloadedStrings
 t <- getCurrentTime
 d = Deadline ("First deadline"::Text) ("It's the first deadline ever"::Text) t
 l = [d,d,d]
@@ -65,12 +65,23 @@ readFromFile fp = do
 writeToFile :: FilePath -> [Deadline] -> IO ()
 writeToFile fp = L.writeFile fp . encode
 
+deadlinesBefore :: UTCTime
+                -> [Deadline] -- ^ A list of deadlines
+                -> [Deadline] -- ^ All deadlines occurring in the next 5 hours
+deadlinesBefore t = Prelude.filter ((< t) . dueDate)
 
+upcomingDeadlines :: [Deadline] -> IO [Deadline]
+upcomingDeadlines xs = currentTimePlusMinutes 300
+  >>= (\time -> return (deadlinesBefore time xs))
 
-upcomingDeadlines :: DiffTime   -- ^ Duration for alert
-                  -> [Deadline] -- ^ A list of deadlines
-                  -> [Deadline] -- ^ All deadlines occurring in the next 5 hours
-upcomingDeadlines = error "not implemented"
+addMinutes :: NominalDiffTime -> UTCTime -> UTCTime
+addMinutes minutes = addUTCTime (minutes * 60)
 
-overlaps :: Deadline -> Deadline -> Bool
-overlaps = error "not implemented"
+currentTimePlusMinutes :: NominalDiffTime -> IO UTCTime
+currentTimePlusMinutes minutes = addUTCTime (minutes * 60) <$> getCurrentTime
+
+deadlineToLine :: TimeZone -> Deadline -> String
+deadlineToLine tz d = title d ++ "\n  "
+                   ++ formatTime defaultTimeLocale "%c" time ++ "\n  "
+                   ++ description d
+  where time = utcToLocalTime tz (dueDate d)
