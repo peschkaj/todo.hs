@@ -16,6 +16,7 @@ import Data.Time.LocalTime
 import Data.Time.Clock (UTCTime, NominalDiffTime, addUTCTime, getCurrentTime)
 import Data.Aeson
 import GHC.Generics
+import Data.List (sort)
 
 data Deadline = Deadline { title :: String
                          , description :: String
@@ -114,7 +115,7 @@ currentTimePlusMinutes :: NominalDiffTime -> IO UTCTime
 currentTimePlusMinutes minutes = addUTCTime (minutes * 60) <$> getCurrentTime
 
 deadlinesToLines :: TimeZone -> [Deadline] -> String
-deadlinesToLines tz = concatMap (\d -> deadlineToLine tz d)
+deadlinesToLines tz ds = concatMap (deadlineToLine tz) (sort ds)
 
 deadlineToLine :: TimeZone -> Deadline -> String
 deadlineToLine tz d = title d ++ "\n  "
