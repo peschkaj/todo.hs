@@ -1,8 +1,15 @@
 {-# LANGUAGE OverloadedStrings, DeriveGeneric, DeriveAnyClass #-}
 
-module Deadline where
+module Deadline (Deadline(..)
+                , readDeadlinesFromFile
+                , writeDeadlinesToFile
+                , upcomingDeadlines
+                , deadlinesToLines
+                , getCurrentDeadlines
+                , addMinutes
+                ) where
 
-import Data.ByteString.Lazy as L hiding (map, concatMap)
+import Data.ByteString.Lazy as L hiding (concatMap)
 import Data.Time.Format (formatTime, defaultTimeLocale)
 import Data.Time.LocalTime
 import Data.Time.Clock (UTCTime, NominalDiffTime, addUTCTime, getCurrentTime)
@@ -68,14 +75,21 @@ instance ToJSON Deadline where
 instance Ord Deadline where
   compare (Deadline _ _ aDate) (Deadline _ _ bDate) = compare aDate bDate
 
-readFromFile :: FilePath -> IO (Maybe [Deadline])
-readFromFile fp = do
+deadlineFile = "Deadlines"
+
+getCurrentDeadlines :: IO [Deadline]
+getCurrentDeadlines = readDeadlinesFromFile deadlineFile >>= (\x -> case x of
+                        (Just ds)  -> return ds
+                        Nothing  -> return [])
+
+
+readDeadlinesFromFile :: FilePath -> IO (Maybe [Deadline])
+readDeadlinesFromFile fp = do
     f <- L.readFile fp
     return (decode f)
 
-
-writeToFile :: FilePath -> [Deadline] -> IO ()
-writeToFile fp = L.writeFile fp . encode
+writeDeadlinesToFile :: FilePath -> [Deadline] -> IO ()
+writeDeadlinesToFile fp = L.writeFile fp . encode
 
 deadlinesBefore :: UTCTime
                 -> [Deadline] -- ^ A list of deadlines
