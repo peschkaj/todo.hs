@@ -1,13 +1,11 @@
 {-# LANGUAGE OverloadedStrings, DeriveGeneric, DeriveAnyClass #-}
 
 module Deadline (Deadline(..)
-                , readDeadlinesFromFile
-                , writeDeadlinesToFile
                 , upcomingDeadlines
                 , deadlinesToLines
                 , getCurrentDeadlines
-                , addMinutes
                 , addDeadline
+                , addMinutes
                 , displayAllDeadlines
                 ) where
 
@@ -26,13 +24,18 @@ data Deadline = Deadline { title :: String
 
 {- How to use a Deadline
 
+-- Assuming you're using `stack ghci`
+
+import Data.Time
 :set -XOverloadedStrings
 t <- getCurrentTime
 tz <- getCurrentTimeZone
 d1 = Deadline "First deadline" "It's the first deadline ever" (addMinutes 60 t)
 d2 = Deadline "Second deadline" "It's the second deadline ever" (addMinutes 180 t)
 d3 = Deadline "Third deadline" "Why so many deadlines?" (addMinutes 600 t)
-l = [d1,d2,d3]
+l1 <- addDeadline d1 ([] :: [Deadline])
+l2 <- addDeadline d2 l1
+l3 <- addDeadline d3 l2
 
 -- What are all of my upcoming tasks?
 putStrLn (deadlinesToLines tz l)
