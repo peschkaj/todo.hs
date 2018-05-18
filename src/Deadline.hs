@@ -1,4 +1,6 @@
-{-# LANGUAGE OverloadedStrings, DeriveGeneric, DeriveAnyClass #-}
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Deadline (Deadline(..)
                 , upcomingDeadlines
@@ -9,17 +11,17 @@ module Deadline (Deadline(..)
                 , displayAllDeadlines
                 ) where
 
-import Data.ByteString.Lazy as L hiding (concatMap, putStrLn)
-import Data.Time.Format (formatTime, defaultTimeLocale)
-import Data.Time.LocalTime
-import Data.Time.Clock (UTCTime, NominalDiffTime, addUTCTime, getCurrentTime)
-import Data.Aeson
-import GHC.Generics
-import Data.List (sort)
+import           Data.Aeson
+import           Data.List            (sort)
+import           Data.Time.Clock      (NominalDiffTime, UTCTime, addUTCTime,
+                                       getCurrentTime)
+import           Data.Time.Format     (defaultTimeLocale, formatTime)
+import           Data.Time.LocalTime
+import           GHC.Generics
 
-data Deadline = Deadline { title :: String
+data Deadline = Deadline { title       :: String
                          , description :: String
-                         , dueDate :: UTCTime
+                         , dueDate     :: UTCTime
                          } deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 {- How to use a Deadline
@@ -50,11 +52,10 @@ e1 = Data.Aeson.encode d1
 d1 == d1'
 
 -- Now we test writing to a file
-writeToFile "Deadline" l
-(Just l') = readFromFile "Deadline"
+(Just l') <- getCurrentDeadlines
 
 -- I should be true!
-l' == l
+l' == l3
 
 
 -}
@@ -81,51 +82,59 @@ instance ToJSON Deadline where
 instance Ord Deadline where
   compare (Deadline _ _ aDate) (Deadline _ _ bDate) = compare aDate bDate
 
+-- | The location of deadline files. Assumed to be in the current directory.
 deadlineFile :: String
 deadlineFile = "Deadlines"
 
+-- | Reads deadlines from deadlineFile and returns a list of deadlines.
+-- If data can't be found, then an empty list is returned.
 getCurrentDeadlines :: IO [Deadline]
-getCurrentDeadlines = readDeadlinesFromFile deadlineFile >>= (\x -> case x of
-                        (Just ds)  -> return ds
-                        Nothing  -> return [])
+getCurrentDeadlines = decodeFileStrict deadlineFile >>= (\x -> case x of
+                        (Just ds) -> return ds
+                        Nothing   -> return [])
 
+-- | Adds a deadline to a list of deadlines and immediately writes the deadline
+-- to the deadlineFile
 addDeadline :: Deadline -> [Deadline] -> IO [Deadline]
-addDeadline d ds = do writeDeadlinesToFile deadlineFile ds'
+addDeadline d ds = do encodeFile deadlineFile ds' --writeDeadlinesToFile deadlineFile ds'
                       return ds'
   where ds' = d:ds
 
-
-readDeadlinesFromFile :: FilePath -> IO (Maybe [Deadline])
-readDeadlinesFromFile fp = do
-    f <- L.readFile fp
-    return (decode f)
-
-writeDeadlinesToFile :: FilePath -> [Deadline] -> IO ()
-writeDeadlinesToFile fp = L.writeFile fp . encode
-
-deadlinesBefore :: UTCTime
+-- | Filters a list of deadlines to only contain deadlines with a 'dueDate' before
+-- a specific 'UTCTime'.
+deadlinesBefore :: UTCTime    -- ^ Max dueDate for deadlines
                 -> [Deadline] -- ^ A list of deadlines
                 -> [Deadline] -- ^ All deadlines occurring in the next 5 hours
 deadlinesBefore t = Prelude.filter ((< t) . dueDate)
 
+-- | Finds all deadlines coming due in the next 5 hours.
 upcomingDeadlines :: [Deadline] -> IO [Deadline]
 upcomingDeadlines xs = currentTimePlusMinutes 300
   >>= (\time -> return (deadlinesBefore time xs))
 
+-- | Adds some number of minutes to a 'UTCTime'
 addMinutes :: NominalDiffTime -> UTCTime -> UTCTime
 addMinutes minutes = addUTCTime (minutes * 60)
 
+-- | Adds some number of minutes to the current time.
 currentTimePlusMinutes :: NominalDiffTime -> IO UTCTime
 currentTimePlusMinutes minutes = addUTCTime (minutes * 60) <$> getCurrentTime
 
+-- | Displays all deadlines in the 'deadlineFile'
 displayAllDeadlines :: IO()
 displayAllDeadlines = do ds <- getCurrentDeadlines
                          tz <- getCurrentTimeZone
                          putStrLn (deadlinesToLines tz ds)
 
-deadlinesToLines :: TimeZone -> [Deadline] -> String
-deadlinesToLines tz ds = concatMap (deadlineToLine tz) (sort ds)
+-- | Converts a list of deadlines into a well-formatted string for display
+-- purposes. If no deadlines are available, displays an appropriate message.
+deadlinesToLines :: TimeZone   -- ^ The desired time zone
+                 -> [Deadline] -- ^ A list of deadlines
+                 -> String     -- ^ A formatted string of deadlines
+deadlinesToLines tz ds | null ds   = "There are no deadlines to display.\n\n"
+                       | otherwise = concatMap (deadlineToLine tz) (sort ds)
 
+-- | Formats a single deadline for display
 deadlineToLine :: TimeZone -> Deadline -> String
 deadlineToLine tz d = title d ++ "\n  "
                    ++ formatTime defaultTimeLocale "%c" time ++ "\n  "
