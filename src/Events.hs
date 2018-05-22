@@ -13,14 +13,32 @@ import           Data.Time.LocalTime
 import           GHC.Generics
 
 
-{-data ToDo = Deadline { title :: String, description :: String, dueDate :: UTCTime} |  
-		Event { name :: String, detail :: String, startTime :: UTCTime, endTime :: UTCTime} 
+{-data ToDo = Deadline { title :: String, description :: String, dueDate :: UTCTime} |
+                Event { name :: String, detail :: String, startTime :: UTCTime, endTime :: UTCTime}
                  deriving (Show, Eq, Generic, ToJSON, FromJSON) -}
 
-data Event = Event { name :: String, detail :: String, startTime :: UTCTime, endTime :: UTCTime} 
+data Event = Event { name :: String, detail :: String, startTime :: UTCTime, endTime :: UTCTime}
                  deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
+{- Testing events
 
+import Data.Time
+:set -XOverloadedStrings
+t <- getCurrentTime
+tz <- getCurrentTimeZone
+
+e1 = Event "First Event" "Some details" (addMinutes 2000 t) (addMinutes 2030 t)
+e2 = Event "Second Event" "Some other details" (addMinutes 30 t) (addMinutes 180 t)
+
+es <- addEvent e1 ([] :: [Event])
+es' <- addEvent e2 es
+
+es'' <- getCurrentEvents
+
+-- Are the lists the same?
+es'' == es'
+
+-}
 
 eventFile :: String
 eventFile = "Events"
@@ -45,8 +63,6 @@ listOfEvents x es = if (existingEvent x es) then es else (x:es)
 -- checks if the new event overlaps with any existing events in the list
 existingEvent :: Event -> [Event] -> Bool
 existingEvent x [] = False
-existingEvent x (e:es) =  if (startTime x) < (endTime e) && (startTime e) < (endTime x) 
+existingEvent x (e:es) =  if (startTime x) < (endTime e) && (startTime e) < (endTime x)
                              then True
                           else (existingEvent x es)
-
-
