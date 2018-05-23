@@ -18,11 +18,12 @@ import           Data.Time.Clock      (NominalDiffTime, UTCTime, addUTCTime,
 import           Data.Time.Format     (defaultTimeLocale, formatTime)
 import           Data.Time.LocalTime
 import           GHC.Generics
+import System.IO.Unsafe (unsafePerformIO)
 
 data Deadline = Deadline { title       :: String
                          , description :: String
                          , dueDate     :: UTCTime
-                         } deriving (Show, Eq, Generic, ToJSON, FromJSON)
+                         } deriving (Eq, Generic, ToJSON, FromJSON)
 
 {- How to use a Deadline
 
@@ -31,7 +32,6 @@ data Deadline = Deadline { title       :: String
 import Data.Time
 :set -XOverloadedStrings
 t <- getCurrentTime
-tz <- getCurrentTimeZone
 d1 = Deadline "First deadline" "It's the first deadline ever" (addMinutes 60 t)
 d2 = Deadline "Second deadline" "It's the second deadline ever" (addMinutes 180 t)
 d3 = Deadline "Third deadline" "Why so many deadlines?" (addMinutes 600 t)
@@ -40,7 +40,7 @@ l2 <- addDeadline d2 l1
 l3 <- addDeadline d3 l2
 
 -- What are all of my upcoming tasks?
-putStrLn (deadlinesToLines tz l)
+putStrLn (deadlinesToLines l)
 
 -- What do I need to do next?
 upcomingDeadlines l >>= putStrLn . deadlinesToLines tz
@@ -81,6 +81,14 @@ instance ToJSON Deadline where
 
 instance Ord Deadline where
   compare (Deadline _ _ aDate) (Deadline _ _ bDate) = compare aDate bDate
+
+instance Show Deadline where
+  show d = title d ++ "\n  "
+                      ++ formatTime defaultTimeLocale "%c" time ++ "\n  "
+                      ++ description d ++ "\n\n"
+    where time = utcToLocalTime (unsafePerformIO getCurrentTimeZone) (dueDate d)
+
+
 
 -- | The location of deadline files. Assumed to be in the current directory.
 deadlineFile :: String
@@ -123,20 +131,18 @@ currentTimePlusMinutes minutes = addUTCTime (minutes * 60) <$> getCurrentTime
 -- | Displays all deadlines in the 'deadlineFile'
 displayAllDeadlines :: IO()
 displayAllDeadlines = do ds <- getCurrentDeadlines
-                         tz <- getCurrentTimeZone
-                         putStrLn (deadlinesToLines tz ds)
+                         putStrLn (deadlinesToLines ds)
 
 -- | Converts a list of deadlines into a well-formatted string for display
 -- purposes. If no deadlines are available, displays an appropriate message.
-deadlinesToLines :: TimeZone   -- ^ The desired time zone
-                 -> [Deadline] -- ^ A list of deadlines
+deadlinesToLines :: [Deadline] -- ^ A list of deadlines
                  -> String     -- ^ A formatted string of deadlines
-deadlinesToLines tz ds | null ds   = "There are no deadlines to display.\n\n"
-                       | otherwise = concatMap (deadlineToLine tz) (sort ds)
+deadlinesToLines ds | null ds   = "There are no deadlines to display.\n\n"
+                    | otherwise = concatMap show (sort ds)
 
 -- | Formats a single deadline for display
-deadlineToLine :: TimeZone -> Deadline -> String
-deadlineToLine tz d = title d ++ "\n  "
-                   ++ formatTime defaultTimeLocale "%c" time ++ "\n  "
-                   ++ description d ++ "\n\n"
-  where time = utcToLocalTime tz (dueDate d)
+-- deadlineToLine :: TimeZone -> Deadline -> String
+-- deadlineToLine tz d = title d ++ "\n  "
+--                    ++ formatTime defaultTimeLocale "%c" time ++ "\n  "
+--                    ++ description d ++ "\n\n"
+--   where time = utcToLocalTime tz (dueDate d)
