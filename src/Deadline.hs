@@ -60,35 +60,14 @@ l' == l3
 
 -}
 
-{-
-instance FromJSON Deadline where
-  parseJSON (Object v) =
-    Deadline <$> v .: "title"
-             <*> v .: "description"
-             <*> v .: "dueDate"
-             <*> v .: "duration"
-
-
-instance ToJSON Deadline where
-  toJSON (Deadline title description dueDate duration) =
-    object [ "title"       .= title
-           , "description" .= description
-           , "dueDate"     .= dueDate
-           , "duration"    .= duration
-           ]
--}
-
-
 instance Ord Deadline where
   compare (Deadline _ _ aDate) (Deadline _ _ bDate) = compare aDate bDate
 
 instance Show Deadline where
   show d = title d ++ "\n  "
-                      ++ formatTime defaultTimeLocale "%c" time ++ "\n  "
-                      ++ description d ++ "\n\n"
+           ++ formatTime defaultTimeLocale "%c" time ++ "\n  "
+           ++ description d ++ "\n\n"
     where time = utcToLocalTime (unsafePerformIO getCurrentTimeZone) (dueDate d)
-
-
 
 -- | The location of deadline files. Assumed to be in the current directory.
 deadlineFile :: String
@@ -139,10 +118,3 @@ deadlinesToLines :: [Deadline] -- ^ A list of deadlines
                  -> String     -- ^ A formatted string of deadlines
 deadlinesToLines ds | null ds   = "There are no deadlines to display.\n\n"
                     | otherwise = concatMap show (sort ds)
-
--- | Formats a single deadline for display
--- deadlineToLine :: TimeZone -> Deadline -> String
--- deadlineToLine tz d = title d ++ "\n  "
---                    ++ formatTime defaultTimeLocale "%c" time ++ "\n  "
---                    ++ description d ++ "\n\n"
---   where time = utcToLocalTime tz (dueDate d)
