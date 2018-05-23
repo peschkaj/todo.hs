@@ -5,7 +5,8 @@
 module Events where
 
 import           Data.Aeson
-import           Data.List            (sort)
+import           Data.List            (sortBy)
+import           Data.Ord             (comparing)
 import           Data.Time.Clock      (NominalDiffTime, UTCTime, addUTCTime,
                                        getCurrentTime)
 import           Data.Time.Format     (defaultTimeLocale, formatTime)
@@ -80,3 +81,24 @@ existingEvent x [] = False
 existingEvent x (e:es) =  if (startTime x) < (endTime e) && (startTime e) < (endTime x)
                              then True
                           else (existingEvent x es)
+
+
+sortEvents :: [Event] -> [Event]
+sortEvents es =  sortBy (comparing startTime) es
+
+
+formatEvent :: TimeZone -> Event -> String
+formatEvent tz e = "\n" ++ name e ++ "\n  " ++ "Starts At: "
+                   ++ formatTime defaultTimeLocale "%c"  (utcToLocalTime tz (startTime e)) ++ "\n  "
+                   ++ "End Time: " ++ formatTime defaultTimeLocale "%c"  (utcToLocalTime tz (endTime e)) ++ "\n  " 
+                   ++  detail e ++ "\n" ++ "-------------------------" ++ "\n"
+
+eventsToString :: TimeZone -> [Event] -> String
+eventsToString tz es | null es = "No Events For You."
+                     | otherwise = concatMap (formatEvent tz) (sortEvents es)
+
+displayEvents :: IO ()
+displayEvents = do es <- getCurrentEvents
+                   tz <- getCurrentTimeZone
+                   putStrLn (eventsToString tz es)
+
