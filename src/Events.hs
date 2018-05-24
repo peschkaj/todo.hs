@@ -64,15 +64,21 @@ getCurrentEvents = decodeFileStrict eventFile >>= (\x -> case x of
                         (Just ts) -> return ts
                         Nothing   -> return [])
 
--- write to the event file and return the list of events (including the new event)
-addEvent :: Event -> [Event] -> IO [Event]
-addEvent x es = do encodeFile eventFile es'
-                   return es'
-                where es'= (listOfEvents x es)
+
+-- write the new Event to the Events file if it does not overlap with existing event, otherwise 
+-- do not add and display error message
+addEvent :: Event -> [Event] -> IO ()
+addEvent x es = do encodeFile eventFile (snd result)
+                   if (fst result) then
+                      putStrLn ("\nEvent added to Schedule successfully.\n")
+                   else
+                      putStrLn ("\nSorry, cannot add Event. The Event you have entered overlaps with an existing event.\n")
+           where result = (listOfEvents x es)
+
 
 -- adds the new event to the list of events if it does not overlap with any existing events
-listOfEvents :: Event -> [Event] -> [Event]
-listOfEvents x es = if (existingEvent x es) then es else (x:es)
+listOfEvents :: Event -> [Event] -> (Bool, [Event])
+listOfEvents x es = if (existingEvent x es) then (False,es) else (True,(x:es))
 
 
 -- checks if the new event overlaps with any existing events in the list
