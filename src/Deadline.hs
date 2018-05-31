@@ -27,7 +27,7 @@ data Deadline = Deadline { title       :: String
 
 {- How to use a Deadline
 
--- Assuming you're using `stack ghci`
+... Assuming you're using `stack ghci`
 
 import Data.Time
 :set -XOverloadedStrings
@@ -40,23 +40,16 @@ l2 <- addDeadline d2 l1
 l3 <- addDeadline d3 l2
 
 -- What are all of my upcoming tasks?
-putStrLn (deadlinesToLines l)
+putStrLn (deadlinesToLines l3)
 
 -- What do I need to do next?
-upcomingDeadlines l >>= putStrLn . deadlinesToLines tz
-
-
--- Testing JSON encode/decode
-e1 = Data.Aeson.encode d1
-(Just d1') = (Data.Aeson.decode e1 :: Maybe Deadline)
-d1 == d1'
+upcomingDeadlines l3 >>= putStrLn . deadlinesToLines
 
 -- Now we test writing to a file
 (Just l') <- getCurrentDeadlines
 
 -- I should be true!
 l' == l3
-
 
 -}
 
