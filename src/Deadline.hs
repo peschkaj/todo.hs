@@ -18,10 +18,11 @@ import           Data.Time.Clock      (NominalDiffTime, UTCTime, addUTCTime,
 import           Data.Time.Format     (defaultTimeLocale, formatTime)
 import           Data.Time.LocalTime
 import           GHC.Generics
-import System.IO.Unsafe (unsafePerformIO)
+import           System.IO.Unsafe (unsafePerformIO)
+import qualified Data.Text as T
 
-data Deadline = Deadline { title       :: String
-                         , description :: String
+data Deadline = Deadline { title       :: T.Text
+                         , description :: T.Text
                          , dueDate     :: UTCTime
                          } deriving (Eq, Generic, ToJSON, FromJSON)
 
@@ -57,9 +58,9 @@ instance Ord Deadline where
   compare (Deadline _ _ aDate) (Deadline _ _ bDate) = compare aDate bDate
 
 instance Show Deadline where
-  show d = title d ++ "\n  "
+  show d = T.unpack (title d) ++ "\n  "
            ++ formatTime defaultTimeLocale "%c" time ++ "\n  "
-           ++ description d ++ "\n\n"
+           ++ T.unpack (description d) ++ "\n\n"
     where time = utcToLocalTime (unsafePerformIO getCurrentTimeZone) (dueDate d)
 
 -- | The location of deadline files. Assumed to be in the current directory.
