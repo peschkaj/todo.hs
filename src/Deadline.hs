@@ -71,7 +71,7 @@ deadlineFile = "Deadlines"
 -- If data can't be found, then an empty list is returned.
 getCurrentDeadlines :: IO [Deadline]
 getCurrentDeadlines = decodeFileStrict deadlineFile >>= (\x -> case x of
-                        (Just ds) -> return ds
+                        (Just ds) -> return $ sort ds
                         Nothing   -> return [])
 
 -- | Adds a deadline to a list of deadlines and immediately writes the deadline
