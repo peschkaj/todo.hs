@@ -13,7 +13,6 @@ import           Data.Time.Format     (defaultTimeLocale, formatTime)
 import           Data.Time.LocalTime
 import           GHC.Generics
 
-
 {-data ToDo = Deadline { title :: String, description :: String, dueDate :: UTCTime} |
                 Event { name :: String, detail :: String, startTime :: UTCTime, endTime :: UTCTime}
                  deriving (Show, Eq, Generic, ToJSON, FromJSON) -}
@@ -107,4 +106,20 @@ displayEvents :: IO ()
 displayEvents = do es <- getCurrentEvents
                    tz <- getCurrentTimeZone
                    putStrLn (eventsToString tz es)
+
+
+{- read in minutes, or hours  then convert to NominalDiffTime
+then iterate through list and if the element startTime - current Time (diffUtcTime) is
+equal to the nominal diff time then put in seperate list and display list -}
+
+
+
+
+
+
+
+
+
+
+
 

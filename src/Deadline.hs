@@ -9,10 +9,13 @@ module Deadline (Deadline(..)
                 , addDeadline
                 , addMinutes
                 , displayAllDeadlines
+                , sortDeadlines
                 ) where
 
 import           Data.Aeson
 import           Data.List            (sort)
+import           Data.List            (sortBy)
+import           Data.Ord             (comparing)
 import           Data.Time.Clock      (NominalDiffTime, UTCTime, addUTCTime,
                                        getCurrentTime)
 import           Data.Time.Format     (defaultTimeLocale, formatTime)
@@ -57,11 +60,14 @@ l' == l3
 instance Ord Deadline where
   compare (Deadline _ _ aDate) (Deadline _ _ bDate) = compare aDate bDate
 
+
 instance Show Deadline where
   show d = T.unpack (title d) ++ "\n  "
            ++ formatTime defaultTimeLocale "%c" time ++ "\n  "
            ++ T.unpack (description d) ++ "\n\n"
     where time = utcToLocalTime (unsafePerformIO getCurrentTimeZone) (dueDate d)
+
+
 
 -- | The location of deadline files. Assumed to be in the current directory.
 deadlineFile :: String
@@ -112,3 +118,7 @@ deadlinesToLines :: [Deadline] -- ^ A list of deadlines
                  -> String     -- ^ A formatted string of deadlines
 deadlinesToLines ds | null ds   = "There are no deadlines to display.\n\n"
                     | otherwise = concatMap show (sort ds)
+
+sortDeadlines :: [Deadline] -> [Deadline]
+sortDeadlines ds =  sortBy (comparing dueDate) ds
+
