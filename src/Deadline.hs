@@ -13,8 +13,7 @@ module Deadline (Deadline(..)
                 ) where
 
 import           Data.Aeson
-import           Data.List            (sort)
-import           Data.List            (sortBy)
+import           Data.List            (sort,sortBy)
 import           Data.Ord             (comparing)
 import           Data.Time.Clock      (NominalDiffTime, UTCTime, addUTCTime,
                                        getCurrentTime)
@@ -30,9 +29,7 @@ data Deadline = Deadline { title       :: T.Text
                          } deriving (Eq, Generic, ToJSON, FromJSON)
 
 {- How to use a Deadline
-
 ... Assuming you're using `stack ghci`
-
 import Data.Time
 :set -XOverloadedStrings
 t <- getCurrentTime
@@ -42,32 +39,24 @@ d3 = Deadline "Third deadline" "Why so many deadlines?" (addMinutes 600 t)
 l1 <- addDeadline d1 ([] :: [Deadline])
 l2 <- addDeadline d2 l1
 l3 <- addDeadline d3 l2
-
 -- What are all of my upcoming tasks?
 putStrLn (deadlinesToLines l3)
-
 -- What do I need to do next?
 upcomingDeadlines l3 >>= putStrLn . deadlinesToLines
-
 -- Now we test writing to a file
 (Just l') <- getCurrentDeadlines
-
 -- I should be true!
 l' == l3
-
 -}
 
 instance Ord Deadline where
   compare (Deadline _ _ aDate) (Deadline _ _ bDate) = compare aDate bDate
-
 
 instance Show Deadline where
   show d = T.unpack (title d) ++ "\n  "
            ++ formatTime defaultTimeLocale "%c" time ++ "\n  "
            ++ T.unpack (description d) ++ "\n\n"
     where time = utcToLocalTime (unsafePerformIO getCurrentTimeZone) (dueDate d)
-
-
 
 -- | The location of deadline files. Assumed to be in the current directory.
 deadlineFile :: String
@@ -121,4 +110,3 @@ deadlinesToLines ds | null ds   = "There are no deadlines to display.\n\n"
 
 sortDeadlines :: [Deadline] -> [Deadline]
 sortDeadlines ds =  sortBy (comparing dueDate) ds
-
