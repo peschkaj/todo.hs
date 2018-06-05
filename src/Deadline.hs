@@ -72,7 +72,7 @@ getCurrentDeadlines = decodeFileStrict deadlineFile >>= (\x -> case x of
 -- | Adds a deadline to a list of deadlines and immediately writes the deadline
 -- to the deadlineFile
 addDeadline :: Deadline -> [Deadline] -> IO [Deadline]
-addDeadline d ds = do encodeFile deadlineFile ds' --writeDeadlinesToFile deadlineFile ds'
+addDeadline d ds = do encodeFile deadlineFile ds'
                       return ds'
   where ds' = d:ds
 
